@@ -14,22 +14,29 @@ namespace ini{
 class IniHandler
 {
 public:
-    using KVStruct=std::unordered_map<std::string,std::unordered_set<std::string>>;
+    using KVStruct=std::unordered_map<std::string,std::string>;
 
     IniHandler(const char* file);
     ~IniHandler() = default;
     
-    std::string get_value(const std::string& section_name ,const std::string& key ,const std::string& defaultValue = std::string()){
+    std::string get_value(const std::string& section_name ,const std::string& key 
+        ,const std::string& defaultValue = std::string())const{
     }
     
-    std::string get_value(const std::string& key ,const std::string& defaultValue = std::string()){
+    std::string get_value(const std::string& key 
+        ,const std::string& defaultValue = std::string())const{
         return get_value("global",key ,defaultValue);
     }
     void dump();
 private:
+/**
+ * 解析section名称（如"[server]" -> "server"）
+ * @param str 原始行内容
+ * @return 处理后的section名称（若格式错误返回空）
+ */
     std::string name_handler(const std::string& str);
     std::pair<std::string,std::string> kv_handler(std::string& str,int line);
-    std::string trim(const std::string& str);
+    void trim(std::string& str);
 private:
     std::unordered_map<std::string,KVStruct> section_;
 };
@@ -46,7 +53,7 @@ IniHandler::IniHandler(const char* file)
         if(buffer.empty()){continue;}
         char first = buffer[0];
         if(first == ' '){
-            buffer = trim(buffer);
+            trim(buffer);
             if(buffer.empty()){
                 continue;
             }
@@ -56,7 +63,7 @@ IniHandler::IniHandler(const char* file)
         else if(first == ';' |first == '#' ){continue;}
         else {
             std::pair<std::string,std::string> kv = kv_handler(buffer,line);
-            section_[name][kv.first].insert(kv.second);
+            section_[name][kv.first] = kv.second;
         }
     }
     ifs.close(); 
@@ -64,7 +71,7 @@ IniHandler::IniHandler(const char* file)
 std::string IniHandler::name_handler(const std::string& str){
     size_t index = str.find(']');
     if(index == std::string::npos){
-        return str.substr(1,str.size()+1);
+        return str.substr(1,str.size()+1);;
     }
     return str.substr(1,index-1);
 }
@@ -77,37 +84,47 @@ std::pair<std::string,std::string> IniHandler::kv_handler(std::string& str,int l
     if(comment_index != std::string::npos){
         str = str.substr(0,comment_index);
     }
-    std::string key;
-    std::string value;
+
     size_t index = str.find("=");
     if(index == std::string::npos){
         std::cerr << "line:" << line << " Format error\n";
     }
-    key = trim(str.substr(0,index));
-    value = trim(str.substr(index+1,str.size()+1));
+    
+    std::string key = str.substr(0,index);
+    std::string value = str.substr(index+1,str.size()+1);
+    
+    trim(key);
+    trim(value);
     return std::pair<std::string,std::string>(key,value);
 }
-std::string IniHandler::trim(const std::string& str){
+void IniHandler::trim(std::string& str){
+    if(str.empty()){return;}
     auto start = std::find_if(str.begin(), str.end(), 
         [](int ch) { return !std::isspace(ch); });
-    if(start == str.end()){return "";}
+    if(start == str.end()){return str.clear();}
     auto end = std::find_if(str.rbegin(), str.rend(), 
         [](int ch) { return !std::isspace(ch); }).base();
-    
-    return std::string(start, end);
+    str = std::string(start, end);
+    if (str.empty()) {return;}
+
+    const char first = str.front();
+    const char last = str.back();
+    const bool is_double_quote = (first == '"' && last == '"');
+    const bool is_single_quote = (first == '\'' && last == '\'');
+
+    if ((is_double_quote || is_single_quote) && str.size() >= 2) {
+        str = str.substr(1, str.size() - 2);
+    }
 }
 void IniHandler::dump(){
-    for(auto& session : section_){
-        std::cout <<"section==========star\n";
-        std::cout <<session.first <<"\n";
-        for(auto& kv :session.second){
-            std::cout << "key:"<<kv.first <<"\nvalue:";
-            for(auto& v : kv.second){
-                std::cout <<v<<"、";
-            }
-            std::cout<<"\n";
+    for(auto& section : section_){
+        std::cout <<"section==========start\n";
+        std::cout <<section.first <<"\n";
+        for(auto& kv :section.second){
+            std::cout << "key:"<<kv.first <<"value:" << kv.second <<"\n";
+            
         }
-        std::cout <<"section==========end\n";
+        std::cout <<"section==========end\n\n";
     }
 }
 } // namespace ini

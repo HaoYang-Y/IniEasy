@@ -1,5 +1,6 @@
 test/test
 test/build
+test/ini_test
 # Prerequisites
 *.d
 
