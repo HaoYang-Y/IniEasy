@@ -1,4 +1,5 @@
 test/test
+test/build
 # Prerequisites
 *.d
 
