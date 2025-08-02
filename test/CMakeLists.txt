@@ -24,5 +24,5 @@ set_target_properties(${TEST_TARGET} PROPERTIES
 # 链接头文件目录
 target_include_directories(${TEST_TARGET}
     PRIVATE
-    ${include_DIR}
+    ${INCLUDE_DIR}
 )
