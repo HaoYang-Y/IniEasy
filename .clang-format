@@ -1,0 +1,9 @@
+BasedOnStyle: Google  # 基于Google风格扩展
+IndentWidth: 4          # 缩进4个空格
+TabWidth: 4             # Tab键宽度4个空格
+UseTab: Always           # 使用Tab
+ColumnLimit: 120        # 每行最大字符数
+BreakBeforeBraces: Attach  # 左括号紧跟语句（如if() {）
+PointerAlignment: Left  # 指针符号靠左（char* ptr而非char *ptr）
+SortIncludes: true      # 自动排序#include
+
