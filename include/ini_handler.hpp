@@ -43,7 +43,7 @@ class IniHandler {
 	inline size_t find_comment_outside_quotes(const std::string &str);
 
    private:
-	std::unordered_map<std::string, KVStruct> section_;
+	std::unordered_map<std::string, KVStruct> sections_;
 };
 
 inline IniHandler::IniHandler(const char *file) {
@@ -57,18 +57,18 @@ inline IniHandler::IniHandler(const char *file) {
 	bool has_next = false;
 	std::string key;
 	while (std::getline(ifs, buffer)) {
+		++line;
 		trim(buffer);
 		if (buffer.empty()) {
 			continue;
 		}
 
 		char first = buffer[0];
-		++line;
 
 		if (has_next && first != '[' && first != ';' && first != '#') {
-			section_[name][key] += kv_handler(buffer, line, has_next).second;
+			sections_[name][key] += kv_handler(buffer, line, has_next).second;
 			if (!has_next) {
-				trim(section_[name][key]);
+				trim(sections_[name][key]);
 			}
 			continue;
 		} else {
@@ -84,7 +84,10 @@ inline IniHandler::IniHandler(const char *file) {
 				break;
 			default:
 				std::pair<std::string, std::string> kv = kv_handler(buffer, line, has_next);
-				section_[name][kv.first] = kv.second;
+				if (kv.first.empty()) {
+					continue;
+				}
+				sections_[name][kv.first] = kv.second;
 				if (has_next) {
 					key = kv.first;
 				}
@@ -96,8 +99,8 @@ inline IniHandler::IniHandler(const char *file) {
 
 inline std::string IniHandler::get_section_value(const std::string &section_name, const std::string &key,
 												 std::string defaultValue) const {
-	auto section_iter = section_.find(section_name);
-	if (section_iter == section_.end()) {
+	auto section_iter = sections_.find(section_name);
+	if (section_iter == sections_.end()) {
 		return defaultValue;
 	}
 	auto kv_iter = section_iter->second.find(key);
@@ -254,10 +257,10 @@ inline size_t IniHandler::find_comment_outside_quotes(const std::string &str) {
 }
 
 inline void IniHandler::dump() {
-	for (auto &section : section_) {
-		std::cout << section.first << "\n";
-		for (auto &kv : section.second) {
-			std::cout << "key:" << kv.first << "value:" << kv.second << "\n";
+	for (const auto &section : sections_) {
+		std::cout << "\n[" << section.first << "]" << std::endl;
+		for (const auto &kv : section.second) {
+			std::cout << "  " << kv.first << " = " << kv.second << std::endl;
 		}
 	}
 }
