@@ -18,20 +18,31 @@ class IniHandler {
 	inline IniHandler(const char *file);
 	inline ~IniHandler() = default;
 
-	inline std::string get_section_value(const std::string &section_name, const std::string &key,
-										 std::string defaultValue = std::string()) const;
+	template <typename T>
+	inline T get_section_value(const std::string &section_name, const std::string &key, T defaultValue = T()) const {
+		std::string value = has_value(section_name, key);
+		if (value.empty()) {
+			return defaultValue;
+		}
 
-	inline int get_section_int(const std::string &section_name, const std::string &key, int defaultValue = 0);
-	inline double get_section_double(const std::string &section_name, const std::string &key, double defaultValue = 0);
+		try {
+			return convert<T>(value);
+		} catch (const std::exception &e) {
+			std::cerr << "转换失败（" << typeid(T).name() << "）：" << e.what() << "，使用默认值：" << defaultValue
+					  << std::endl;
+			return defaultValue;
+		}
+	}
 
-	inline std::string get_value(const std::string &key, std::string defaultValue = std::string()) const;
-
-	inline int get_int(const std::string &key, int defaultValue = 0);
-	inline double get_double(const std::string &key, double defaultValue = 0);
+	template <typename T>
+	inline T get_value(const std::string &key, T defaultValue = T()) const {
+		return get_section_value<T>("global", key, defaultValue);
+	}
 
 	inline void dump();
 
    private:
+	inline std::string has_value(const std::string &section_name, const std::string &key) const;
 	/**
 	 * 解析section名称（如[server] -> server）
 	 * @param str 原始行内容
@@ -41,6 +52,8 @@ class IniHandler {
 	inline std::pair<std::string, std::string> kv_handler(std::string &str, int line, bool &has_next);
 	inline void trim(std::string &str);
 	inline size_t find_comment_outside_quotes(const std::string &str);
+	template <typename T>
+	inline T convert(const std::string &value) const;
 
    private:
 	std::unordered_map<std::string, KVStruct> sections_;
@@ -97,46 +110,25 @@ inline IniHandler::IniHandler(const char *file) {
 	ifs.close();
 }
 
-inline std::string IniHandler::get_section_value(const std::string &section_name, const std::string &key,
-												 std::string defaultValue) const {
+inline void IniHandler::dump() {
+	for (const auto &section : sections_) {
+		std::cout << "\n[" << section.first << "]" << std::endl;
+		for (const auto &kv : section.second) {
+			std::cout << "  " << kv.first << " = " << kv.second << std::endl;
+		}
+	}
+}
+
+inline std::string IniHandler::has_value(const std::string &section_name, const std::string &key) const {
 	auto section_iter = sections_.find(section_name);
 	if (section_iter == sections_.end()) {
-		return defaultValue;
+		return std::string();
 	}
 	auto kv_iter = section_iter->second.find(key);
 	if (kv_iter == section_iter->second.end()) {
-		return defaultValue;
+		return std::string();
 	}
 	return kv_iter->second;
-}
-
-inline int IniHandler::get_section_int(const std::string &section_name, const std::string &key, int defaultValue) {
-	try {
-		std::string tmp = get_section_value(section_name, key);
-		return tmp.empty() ? defaultValue : std::stoi(tmp);
-	} catch (const std::invalid_argument &e) {
-		std::cerr << "转换int失败（无效参数）：" << e.what() << std::endl;
-		return defaultValue;
-	} catch (const std::out_of_range &e) {
-		std::cerr << "转换int失败（超出范围）：" << e.what() << std::endl;
-		return defaultValue;
-	}
-}
-
-inline double IniHandler::get_section_double(const std::string &section_name, const std::string &key,
-											 double defaultValue) {
-	try {
-		std::string tmp = get_section_value(section_name, key);
-		return tmp.empty() ? defaultValue : std::stod(tmp);
-	} catch (const std::exception &e) {
-		std::cerr << "转换double失败：" << e.what() << std::endl;
-		return defaultValue;
-	}
-}
-
-inline std::string IniHandler::get_value(const std::string &key, std::string defaultValue) const {
-	std::string section_name("global");
-	return get_section_value(section_name, key, std::move(defaultValue));
 }
 
 inline std::string IniHandler::name_handler(const std::string &str) {
@@ -148,29 +140,6 @@ inline std::string IniHandler::name_handler(const std::string &str) {
 	session.erase(0, 1);
 	trim(session);
 	return session;
-}
-
-inline int IniHandler::get_int(const std::string &key, int defaultValue) {
-	try {
-		std::string tmp = get_value(key);
-		return tmp.empty() ? defaultValue : std::stoi(tmp);
-	} catch (const std::invalid_argument &e) {
-		std::cerr << "转换int失败（无效参数）：" << e.what() << std::endl;
-		return defaultValue;
-	} catch (const std::out_of_range &e) {
-		std::cerr << "转换int失败（超出范围）：" << e.what() << std::endl;
-		return defaultValue;
-	}
-}
-
-inline double IniHandler::get_double(const std::string &key, double defaultValue) {
-	try {
-		std::string tmp = get_value(key);
-		return tmp.empty() ? defaultValue : std::stod(tmp);
-	} catch (const std::exception &e) {
-		std::cerr << "转换double失败：" << e.what() << std::endl;
-		return defaultValue;
-	}
 }
 
 inline std::pair<std::string, std::string> IniHandler::kv_handler(std::string &str, int line, bool &has_next) {
@@ -256,13 +225,42 @@ inline size_t IniHandler::find_comment_outside_quotes(const std::string &str) {
 	return std::string::npos;
 }
 
-inline void IniHandler::dump() {
-	for (const auto &section : sections_) {
-		std::cout << "\n[" << section.first << "]" << std::endl;
-		for (const auto &kv : section.second) {
-			std::cout << "  " << kv.first << " = " << kv.second << std::endl;
-		}
-	}
+template <>
+int IniHandler::convert<int>(const std::string &value) const {
+	return std::stoi(value);
+}
+
+template <>
+double IniHandler::convert<double>(const std::string &value) const {
+	return std::stod(value);
+}
+
+template <>
+float IniHandler::convert<float>(const std::string &value) const {
+	return std::stof(value);
+}
+
+template <>
+long IniHandler::convert<long>(const std::string &value) const {
+	return std::stol(value);
+}
+
+template <>
+bool IniHandler::convert<bool>(const std::string &value) const {
+	std::string lower_value = value;
+	std::transform(lower_value.begin(), lower_value.end(), lower_value.begin(), ::tolower);
+
+	return lower_value == "true" ? true : false;
+}
+
+template <>
+std::string IniHandler::convert<std::string>(const std::string &value) const {
+	return value;
+}
+
+template <>
+const char *IniHandler::convert<const char *>(const std::string &value) const {
+	return value.c_str();
 }
 }  // namespace ini
 }  // namespace multi
