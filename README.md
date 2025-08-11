@@ -22,10 +22,10 @@
 
 ### 安装
 
-将 `ini_handler.h`复制到你的项目中，直接包含即可：
+将 `ini_handler.hpp`复制到你的项目中，直接包含即可：
 
 ```cpp
-#include "ini_handler.h"
+#include "ini_handler.hpp"
 ```
 
 ### 基础用法
