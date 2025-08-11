@@ -14,7 +14,7 @@ int main() {
 		std::cout << "\n===== 全局节API测试 =====" << std::endl;
 
 		// 3.1 读取字符串值
-		std::string version = ini.get_value("version", "unknown");
+		std::string version = ini.get_value<std::string>("version", "unknown");
 		std::cout << "全局版本号: " << version << std::endl;
 
 		// 3.2 读取int值
