@@ -16,7 +16,6 @@ class IniHandler {
 	using KVStruct = std::unordered_map<std::string, std::string>;
 
 	inline IniHandler(const char *file);
-	inline IniHandler(const char *file);
 	inline ~IniHandler() = default;
 
 	template <typename T>
@@ -53,19 +52,16 @@ class IniHandler {
 	inline std::pair<std::string, std::string> kv_handler(std::string &str, int line, bool &has_next);
 	inline void trim(std::string &str);
 	inline size_t find_comment_outside_quotes(const std::string &str);
+
 	template <typename T>
-	inline T convert(const std::string &value) const;
+	T convert(const std::string &value) const;
 
    private:
 	std::unordered_map<std::string, KVStruct> sections_;
 };
 
 inline IniHandler::IniHandler(const char *file) {
-inline IniHandler::IniHandler(const char *file) {
 	std::ifstream ifs(file);
-	if (!ifs.is_open()) {
-		throw std::runtime_error("无法打开INI文件: " + std::string(file));
-	}
 	if (!ifs.is_open()) {
 		throw std::runtime_error("无法打开INI文件: " + std::string(file));
 	}
@@ -74,15 +70,12 @@ inline IniHandler::IniHandler(const char *file) {
 	int line = 0;
 	bool has_next = false;
 	std::string key;
-	bool has_next = false;
-	std::string key;
 	while (std::getline(ifs, buffer)) {
 		++line;
 		trim(buffer);
 		if (buffer.empty()) {
 			continue;
 		}
-
 
 		char first = buffer[0];
 
@@ -118,15 +111,6 @@ inline IniHandler::IniHandler(const char *file) {
 	ifs.close();
 }
 
-inline void IniHandler::dump() {
-	for (const auto &section : sections_) {
-		std::cout << "\n[" << section.first << "]" << std::endl;
-		for (const auto &kv : section.second) {
-			std::cout << "  " << kv.first << " = " << kv.second << std::endl;
-		}
-	}
-}
-
 inline std::string IniHandler::has_value(const std::string &section_name, const std::string &key) const {
 	auto section_iter = sections_.find(section_name);
 	if (section_iter == sections_.end()) {
@@ -152,23 +136,9 @@ inline std::string IniHandler::name_handler(const std::string &str) {
 
 inline std::pair<std::string, std::string> IniHandler::kv_handler(std::string &str, int line, bool &has_next) {
 	size_t comment_index = find_comment_outside_quotes(str);
-inline std::pair<std::string, std::string> IniHandler::kv_handler(std::string &str, int line, bool &has_next) {
-	size_t comment_index = find_comment_outside_quotes(str);
 	if (comment_index != std::string::npos) {
 		str.erase(comment_index);
-		str.erase(comment_index);
 	}
-	std::string key;
-	std::string value;
-	if (has_next) {
-		has_next = false;
-		value = str;
-	} else {
-		size_t index = str.find("=");
-		if (index == std::string::npos) {
-			std::cerr << "line:" << line << " Format error\n";
-			return {key, value};
-		}
 	std::string key;
 	std::string value;
 	if (has_next) {
@@ -183,23 +153,10 @@ inline std::pair<std::string, std::string> IniHandler::kv_handler(std::string &s
 
 		key = str.substr(0, index);
 		value = str.substr(index + 1);
-		key = str.substr(0, index);
-		value = str.substr(index + 1);
 
-		trim(key);
-	}
 		trim(key);
 	}
 	trim(value);
-	if (!value.empty()) {
-		// 检查最后一个非空白字符是否为\（避免空白后的\被误判）
-		size_t last_non_space = value.find_last_not_of(" \t");
-		if (last_non_space != std::string::npos && value[last_non_space] == '\\') {
-			has_next = true;
-			value.erase(last_non_space);  // 移除续行符\,
-			trim(value);				  // 移除\后的空白（确保拼接无冗余空格）
-		}
-	}
 	if (!value.empty()) {
 		// 检查最后一个非空白字符是否为\（避免空白后的\被误判）
 		size_t last_non_space = value.find_last_not_of(" \t");
@@ -213,25 +170,15 @@ inline std::pair<std::string, std::string> IniHandler::kv_handler(std::string &s
 }
 
 inline void IniHandler::trim(std::string &str) {
-inline void IniHandler::trim(std::string &str) {
 	if (str.empty()) {
 		return;
 	}
 	auto start = std::find_if(str.begin(), str.end(),
 							  [](unsigned int ch) { return !std::isspace(static_cast<unsigned char>(ch)); });
-	auto start = std::find_if(str.begin(), str.end(),
-							  [](unsigned int ch) { return !std::isspace(static_cast<unsigned char>(ch)); });
 	if (start == str.end()) {
 		str.clear();
 		return;
-		str.clear();
-		return;
 	}
-	str.erase(str.begin(), start);
-	auto end = std::find_if(str.rbegin(), str.rend(), [](unsigned int ch) {
-				   return !std::isspace(static_cast<unsigned char>(ch));
-			   }).base();
-	str.erase(end, str.end());
 	str.erase(str.begin(), start);
 	auto end = std::find_if(str.rbegin(), str.rend(), [](unsigned int ch) {
 				   return !std::isspace(static_cast<unsigned char>(ch));
@@ -268,6 +215,15 @@ inline size_t IniHandler::find_comment_outside_quotes(const std::string &str) {
 		}
 	}
 	return std::string::npos;
+}
+
+inline void IniHandler::dump() {
+	for (const auto &section : sections_) {
+		std::cout << "\n[" << section.first << "]" << std::endl;
+		for (const auto &kv : section.second) {
+			std::cout << "  " << kv.first << " = " << kv.second << std::endl;
+		}
+	}
 }
 
 template <>
@@ -307,6 +263,7 @@ template <>
 const char *IniHandler::convert<const char *>(const std::string &value) const {
 	return value.c_str();
 }
+
 }  // namespace ini
 }  // namespace multi
 
