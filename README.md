@@ -34,12 +34,16 @@
 
 ### API参考
 
-|                      方法                      |                             说明                             |
-| :--------------------------------------------: | :-----------------------------------------------------------: |
-|          IniHandler(const char* file)          | 构造函数：加载并解析指定的 INI 文件（文件打开失败时抛异常）。 |
-|         get_value < T >(key, default)         | 从[global]节读取字符串，若键不存在则返回默认值。T 为基础类型 |
-| get_section_value < T >(section, key, default) | 从指定节读取字符串，若节或键不存在则返回默认值。T 为基础类型 |
-|                     dump()                     |               打印所有解析到的配置（调试用）。               |
+| 方法                                                                                  | 说明                                                          |
+| :------------------------------------------------------------------------------------ | :------------------------------------------------------------ |
+| IniHandler(const char* file)                                                          | 构造函数：加载并解析指定的 INI 文件（文件打开失败时抛异常）。 |
+| T get_value < T >(key, default)                                                       | 从[global]节读取字符串，若键不存在则返回默认值。T 为基础类型  |
+| T get_section_value < T >(section, key, default)                                      | 从指定节读取字符串，若节或键不存在则返回默认值。T 为基础类型  |
+| bool has_section(const std::string &section)                                          | 判断该section是否存在                                         |
+| bool has_key(const std::string &section, const std::string &key)                      | 判断该section下的key是否存在                                  |
+| std::unordered_set[std::string](std::string) get_all_section()                           | 获取配置文件里所有的section name                              |
+| std::unordered_set[std::string](std::string) get_section_key(const std::string &section) | 获取section所属的所有key                                      |
+| dump()                                                                                | 打印所有解析到的配置（调试用）。                              |
 
 ### 行为说明
 
@@ -59,5 +63,4 @@
 ## ⚠️  局限性
 
 - 不支持写入 INI 文件（专注于读取场景）
-- 无遍历所有节 / 键的 API（设计目标为 “已知配置项” 的读取）。
 - 不处理转义字符（如引号内的\"会被视为普通字符）。

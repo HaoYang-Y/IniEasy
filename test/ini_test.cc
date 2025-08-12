@@ -71,6 +71,23 @@ int main() {
 		double db_timeout = ini.get_section_value<double>("db.mysql", "timeout", 30.5);
 		std::cout << "MySQL超时（double）: " << db_timeout << std::endl;
 
+		// 8 判断section和key是否存在
+		std::cout << "\n===== 判断section或key是否存在 =====" << std::endl;
+		std::cout << "db.mysql是否存在" << ini.has_section("db.mysql") << std::endl;
+		std::cout << "db.mysql下port是否存在" << ini.has_key("db.mysql", "port") << std::endl;
+		// 9 获取section和key
+		std::cout << "\n===== 获取section和key =====" << std::endl;
+		std::unordered_set<std::string> sections = ini.get_all_section();
+		for (auto& section : sections) {
+			std::cout << section << " ";
+		}
+		std::cout << std::endl;
+
+		std::unordered_set<std::string> keys = ini.get_section_key("db.mysql");
+		for (auto& key : keys) {
+			std::cout << key << " ";
+		}
+		std::cout << std::endl;
 	} catch (const std::exception& e) {
 		// 捕获所有异常（如文件打开失败）
 		std::cerr << "\n发生错误: " << e.what() << std::endl;

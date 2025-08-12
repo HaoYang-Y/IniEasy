@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace multi {
 namespace ini {
@@ -38,6 +39,12 @@ class IniHandler {
 	inline T get_value(const std::string &key, T defaultValue = T()) const {
 		return get_section_value<T>("global", key, defaultValue);
 	}
+
+	inline bool has_section(const std::string &section) const;
+	inline bool has_key(const std::string &section, const std::string &key) const;
+
+	inline std::unordered_set<std::string> get_all_section() const;
+	inline std::unordered_set<std::string> get_section_key(const std::string &section) const;
 
 	inline void dump();
 
@@ -109,6 +116,40 @@ inline IniHandler::IniHandler(const char *file) {
 		}
 	}
 	ifs.close();
+}
+
+inline bool IniHandler::has_section(const std::string &section) const {
+	return sections_.find(section) != sections_.end();
+}
+
+inline bool IniHandler::has_key(const std::string &section, const std::string &key) const {
+	auto section_iter = sections_.find(section);
+	if (section_iter == sections_.end()) {
+		return false;
+	}
+	return section_iter->second.find(key) != section_iter->second.end();
+}
+
+inline std::unordered_set<std::string> IniHandler::get_all_section() const {
+	std::unordered_set<std::string> sections;
+	sections.reserve(sections_.size());
+	for (auto &section : sections_) {
+		sections.insert(section.first);
+	}
+	return sections;
+}
+
+inline std::unordered_set<std::string> IniHandler::get_section_key(const std::string &section) const {
+	auto section_iter = sections_.find(section);
+	if (section_iter == sections_.end()) {
+		return {};
+	}
+	std::unordered_set<std::string> keys;
+	keys.reserve(sections_.size());
+	for (auto &key : section_iter->second) {
+		keys.insert(key.first);
+	}
+	return keys;
 }
 
 inline std::string IniHandler::has_value(const std::string &section_name, const std::string &key) const {
